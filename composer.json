@@ -1,0 +1,21 @@
+{
+    "name": "chrisnharvey/php-simple-rdkafka",
+    "description": "Small wrapper around the rdkafka extension to make it easier to use",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Chris Harvey",
+            "email": "chris@chrisnharvey.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "ext-rdkafka": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ChrisHarvey\\SimpleKafka\\": "src/"
+        }
+    }
+}
