@@ -10,8 +10,12 @@ use RdKafka\KafkaConsumer;
 class Kafka
 {
     public function __construct(
-        protected array $brokers
-    ) {}
+        protected array|string $brokers
+    ) {
+        if (is_string($brokers)) {
+            $this->brokers = explode(',', $brokers);
+        }
+    }
 
     public function consume(string $groupId, string $topic, callable $callback, ?callable $timeoutCallback = null)
     {
