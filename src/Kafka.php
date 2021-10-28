@@ -6,11 +6,14 @@ use RuntimeException;
 use RdKafka\Conf;
 use RdKafka\Producer;
 use RdKafka\KafkaConsumer;
+use RecursiveArrayIterator;
+use RecursiveIteratorIterator;
 
 class Kafka
 {
     public function __construct(
-        protected array|string $brokers
+        protected array|string $brokers,
+        protected array $config = []
     ) {
         if (is_string($brokers)) {
             $this->brokers = explode(',', $brokers);
@@ -19,12 +22,9 @@ class Kafka
 
     public function consume(string $groupId, string $topic, callable $callback, ?callable $timeoutCallback = null)
     {
-        $conf = new Conf();
-
-        $conf->set('metadata.broker.list', implode(',', $this->brokers));
+        $conf = $this->getConf();
 
         $conf->set('group.id', $groupId);
-
         $conf->set('auto.offset.reset', 'earliest');
 
         $consumer = new KafkaConsumer($conf);
@@ -51,10 +51,7 @@ class Kafka
 
     public function produce(string $topicName, string $payload, int $partition = RD_KAFKA_PARTITION_UA, int $messageFlags = 0, int $maxFlushRetries = 10)
     {
-        $conf = new Conf();
-        $conf->set('metadata.broker.list', implode(',', $this->brokers));
-
-        $producer = new Producer($conf);
+        $producer = new Producer($this->getConf());
 
         $topic = $producer->newTopic($topicName);
 
@@ -72,5 +69,30 @@ class Kafka
         if (RD_KAFKA_RESP_ERR_NO_ERROR !== $result) {
             throw new RuntimeException('Was unable to flush, messages might be lost!');
         }
+    }
+
+    protected function getConf()
+    {
+        $conf = new Conf();
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveArrayIterator(
+                $this->config
+            )
+        );
+        
+        foreach ($iterator as $value) {
+            $keys = [];
+
+            foreach (range(0, $iterator->getDepth()) as $depth) {
+                $keys[] = $iterator->getSubIterator($depth)->key();
+            }
+
+            $conf->set(implode('.', $keys), $value);
+        }
+
+        $conf->set('metadata.broker.list', implode(',', $this->brokers));
+
+        return $conf;
     }
 }
